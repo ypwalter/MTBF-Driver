@@ -33,6 +33,7 @@ class MTBF_Driver:
         self.start_time = time.time()
 
         while(True):
+            counter = 0
             ## Run test
             ## workaround: kill the runner and create another one each round, should be fixed
             self.runner = runner_class(**vars(options))
@@ -43,6 +44,13 @@ class MTBF_Driver:
 
             self.logger = logging.getLogger('Marionette')
             self.logger.handlers = []
+
+            if self.runner.passed == 0:
+                counter = counter + 1
+                if counter >= 3:
+                    break
+            else:
+                counter = 0
 
     def get_report(self):
         self.running_time = time.time() - self.start_time

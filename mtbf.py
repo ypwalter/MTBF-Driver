@@ -32,8 +32,8 @@ class MTBF_Driver:
         parser.verify_usage(options, tests)
         self.start_time = time.time()
 
+        counter = 0
         while(True):
-            counter = 0
             ## Run test
             ## workaround: kill the runner and create another one each round, should be fixed
             self.runner = runner_class(**vars(options))

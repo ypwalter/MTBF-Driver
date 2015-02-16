@@ -107,7 +107,8 @@ class GaiaMtbfTestCase(GaiaTestCase):
             # don't remove contact data
             # self.data_layer.remove_all_contacts()
 
-            # reset to home screen
+            # reset to home screen (dispacth event first to avoid None object in touch_home_button)
+            self.device._dispatch_home_button_event()
             self.device.touch_home_button()
 
         # disable sound completely

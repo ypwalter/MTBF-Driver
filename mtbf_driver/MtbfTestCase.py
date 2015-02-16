@@ -64,7 +64,9 @@ class GaiaMtbfTestCase(GaiaTestCase):
             self.device.unlock()
 
         # kill FTU if possible
-        if self.apps.displayed_app.name.upper() == "FTU":
+        if self.apps.displayed_app.name == None:
+            pass
+        elif self.apps.displayed_app.name.upper() == "FTU":
             self.apps.kill(self.apps.displayed_app)
 
         if full_reset:

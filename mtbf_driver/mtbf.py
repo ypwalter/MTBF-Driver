@@ -1,24 +1,22 @@
 import os
-import sys
 import os.path
-import signal
-import time
-import json
 import re
 import shutil
-from zipfile import ZipFile
+import signal
+import sys
+import time
+import json
 from ConfigParser import NoSectionError
 from gaiatest.runtests import GaiaTestRunner, GaiaTestOptions
 from mozlog import structured
 from mozdevice.devicemanager import DMError
-
 from utils.memory_report_args import memory_report_args
 from utils.step_gen import RandomStepGen, ReplayStepGen
 from utils.time_utils import time2sec
+from zipfile import ZipFile
 
 
 class MTBF_Driver:
-
     runner_class = GaiaTestRunner
     parser_class = GaiaTestOptions
     start_time = 0
@@ -132,6 +130,12 @@ class MTBF_Driver:
         httpd = None
         self.logger.info("Starting MTBF....")
 
+        # Charge x hours per 24 hours
+        if os.getenv("CHARGE_HOUR"):
+            self.charge = 1
+        else:
+            self.charge = -1
+
         while(True):
             self.collect_metrics(current_round)
             current_round = current_round + 1
@@ -156,6 +160,13 @@ class MTBF_Driver:
             tests = sg.generate()
             file_name, file_path = zip(*tests)
             self.ttr = self.ttr + list(file_name)
+
+            current_runtime = time.time() - self.start_time
+            if self.charge > 0 and (current_runtime / 86400) >= self.charge:
+                file_name = (u'test_charge.py',)
+                file_path = (os.path.join(self.ori_dir, "tests", "test_charge.py"),)
+                self.charge += 1
+
             for i in range(0, 10):
                 try:
                     self.runner.run_tests(file_path)
@@ -176,6 +187,8 @@ class MTBF_Driver:
 
             current_runtime = time.time() - self.start_time
             self.logger.info("\n*Current MTBF Time: %.3f seconds" % current_runtime)
+            if self.charge > 0:
+                self.logger.info("\n*Current Sleep Time: %.3f seconds" % ((self.charge - 1)*3600))
 
             ## This is a temporary solution for stop the tests
             ## If there should be any interface there for us
@@ -188,6 +201,8 @@ class MTBF_Driver:
     def get_report(self):
         self.running_time = time.time() - self.start_time
         self.logger.info("\n*Total MTBF Time: %.3f seconds" % self.running_time)
+        if self.charge > 0:
+            self.logger.info("\nTotal Sleep Time: %.3f seconds" % ((self.charge - 1)*3600))
         self.logger.info('\nMTBF TEST SUMMARY\n-----------------')
         self.logger.info('passed: %d' % self.passed)
         self.logger.info('failed: %d' % self.failed)
